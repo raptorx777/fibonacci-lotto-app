@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fibonacci Smart Picker</title>
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" sizes="512x512" href="icon.png">
+    <style>
+        :root { --gold: #d4af37; --bright: #f4d03f; --bg: #1a1a1a; --card: #2c2c2c; }
+        body { font-family: sans-serif; background-color: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .container { background-color: var(--card); padding: 2rem; border-radius: 20px; text-align: center; max-width: 400px; width: 90%; border: 1px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: var(--gold); margin: 0; font-size: 1.6rem; }
+        .subtitle { color: #888; font-size: 0.8rem; margin-bottom: 25px; }
+        .ball-container { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; min-height: 50px; }
+        .ball { width: 45px; height: 45px; background: radial-gradient(circle at 30% 30%, var(--bright), var(--gold)); color: #111; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); animation: pop 0.4s ease; }
+        @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        button.main-btn { background-color: var(--gold); color: #111; border: none; padding: 16px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; }
+        .history { margin-top: 35px; width: 100%; text-align: left; border-top: 1px solid #444; padding-top: 15px; }
+        .history-item { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--gold); font-family: monospace; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Fibonacci Smart Picker</h1>
+    <div class="subtitle">Sequence Weighted • Balanced Odds</div>
+    <div class="ball-container" id="ballBox"></div>
+    <button class="main-btn" onclick="generateNumbers()">GENERATE NUMBERS</button>
+    <div class="history">
+        <div id="historyBox"></div>
+    </div>
+</div>
+<script>
+    const fibs = [1, 2, 3, 5, 8, 13, 21, 34, 55];
+    function initApp() { renderHistory(); }
+    function generateNumbers() {
+        if (window.navigator.vibrate) window.navigator.vibrate([80, 40, 80]);
+        let ticket = [];
+        let isBalanced = false;
+        while (!isBalanced) {
+            ticket = [];
+            let tempFibs = [...fibs];
+            for(let i=0; i<2; i++) {
+                ticket.push(tempFibs.splice(Math.floor(Math.random() * tempFibs.length), 1)[0]);
+            }
+            while(ticket.length < 6) {
+                let num = Math.floor(Math.random() * 60) + 1;
+                if(!ticket.includes(num)) ticket.push(num);
+            }
+            if(ticket.filter(n => n % 2 !== 0).length === 3) isBalanced = true;
+        }
+        ticket.sort((a, b) => a - b);
+        displayTicket(ticket);
+        saveToHistory(ticket);
+    }
+    function displayTicket(numbers) {
+        const box = document.getElementById('ballBox');
+        box.innerHTML = '';
+        numbers.forEach(n => {
+            const b = document.createElement('div');
+            b.className = 'ball'; b.innerText = n; box.appendChild(b);
+        });
+    }
+    function saveToHistory(nums) {
+        let history = JSON.parse(localStorage.getItem('fibLottoData')) || [];
+        history.unshift(nums);
+        if (history.length > 5) history.pop();
+        localStorage.setItem('fibLottoData', JSON.stringify(history));
+        renderHistory();
+    }
+    function renderHistory() {
+        const box = document.getElementById('historyBox');
+        let history = JSON.parse(localStorage.getItem('fibLottoData')) || [];
+        box.innerHTML = history.map(t => `<div class="history-item">${t.join(' - ')}</div>`).join('');
+    }
+    window.onload = initApp;
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>
